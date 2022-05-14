@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     fout.open("PCA_out.csv", ios::out);
     fout << "ImageId,Label" << endl;
     vector<neighbour> neareast_neighbors(k);
-    for(int i = 0; i < test.size(); i++){
+    for(int i = 0; i < test_size; i++){
         // Reset the nearest neighbors
         for(int j = 0; j < k; j++){
             get<1>(neareast_neighbors[j]) = numeric_limits<int>::max();
