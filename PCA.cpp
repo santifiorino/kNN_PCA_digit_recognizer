@@ -47,14 +47,15 @@ int count_lines(char* filename) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 5){
-        cout << "Error: 4 parametros requeridos <train> <test> <alpha> <k>" << endl;
+    if (argc != 6){
+        cout << "Error: 5 parametros requeridos <train> <test> <out> <alpha> <k>" << endl;
         return 1;
     }
     char* train_file = argv[1];
     char* test_file = argv[2];
-    char* a_input = argv[3];
-    char* k_input = argv[4];
+    char* out_file = argv[3];
+    char* a_input = argv[4];
+    char* k_input = argv[5];
     int alpha = atoi(a_input);
     int k = atoi(k_input);
 
@@ -103,8 +104,9 @@ int main(int argc, char *argv[]) {
     cout << "Creando matriz de covarianza" << endl;
     test.rowwise() -= X.colwise().mean();
     X.rowwise() -= X.colwise().mean();
-    test *= (1 / sqrt(double(train_size)-1));
     MatrixXd X_aux = X;
+    test *= (1 / sqrt(double(train_size)-1));
+    X_aux *= (1 / sqrt(double(train_size)-1));
     X *= (1 / (double(train_size)-1));
     X = (X.transpose() * X);
 
@@ -113,7 +115,7 @@ int main(int argc, char *argv[]) {
     Eigen::MatrixXd D = deflation(X, V_T);
 
     cout << "Cambiando de base el train" << endl;
-    X_aux *= (1 / sqrt(double(train_size)-1));
+    
     Eigen::MatrixXd new_train(train_size, alpha);
     for (int i = 0; i < train_size; i++){
         for (int j = 0; j < alpha; j++){
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    cout << "Cambiando de base el test y aplicando tc" << endl;
+    cout << "Cambiando de base el test" << endl;
     
     Eigen::MatrixXd new_test(test_size, alpha);
     for (int i = 0; i < test_size; i++){
@@ -132,7 +134,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Calculando los k vecinos" << endl;
     fstream fout;
-    fout.open("PCA_out.csv", ios::out);
+    fout.open(out_file, ios::out);
     fout << "ImageId,Label" << endl;
     vector<neighbour> neareast_neighbors(k);
     for(int i = 0; i < test_size; i++){
