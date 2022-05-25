@@ -15,28 +15,6 @@ bool sortbysec(neighbour &a, neighbour &b){
     return (get<1>(a) < get<1>(b));
 }
 
-double metodo_potencia(MatrixXd &B, VectorXd &v, int niter){
-    for(int i = 0; i < niter; i++){
-        v = B * v;
-        v = v / v.norm();
-    }
-    return double(v.transpose() * B * v) / double(v.transpose() * v);
-}
-
-MatrixXd deflation(MatrixXd &B, MatrixXd &P){
-    int n = 784;
-    MatrixXd D(n,n);
-    Eigen::VectorXd v = Eigen::VectorXd::Constant(n, 1);
-    double l = 0;
-    for (int i = 0; i < n; i++){
-        B = B - l*v*v.transpose();
-        l = metodo_potencia(B, v, 1000);
-        D(i,i) = l;
-        P.col(i) = v;
-    }
-    return D;
-}
-
 int count_lines(char* filename) {
     ifstream file(filename);
     string line;
@@ -50,19 +28,17 @@ int main(int argc, char *argv[]) {
     clock_t start, end;
     start = clock();
 
-    if (argc != 6){
-        cout << "Error: 5 parametros requeridos <train> <test> <out> <alpha> <k>" << endl;
+    if (argc != 5){
+        cout << "Error: 5 parametros requeridos <train> <test> <out> <k>" << endl;
         return 1;
     }
     char* train_file = argv[1];
     char* test_file = argv[2];
     char* out_file = argv[3];
-    char* a_input = argv[4];
-    char* k_input = argv[5];
-    int alpha = atoi(a_input);
+    char* k_input = argv[4];
     int k = atoi(k_input);
 
-    // cout << "Leeyendo los datos de entrada" << endl;
+    cout << "Leeyendo los datos de entrada" << endl;
 
     int train_size = count_lines(train_file);
     Eigen::MatrixXd X(train_size, 784);
@@ -104,41 +80,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-    // cout << "Creando matriz de covarianza" << endl;
-    test.rowwise() -= X.colwise().mean();
-    X.rowwise() -= X.colwise().mean();
-    MatrixXd X_aux = X;
-    test *= (1 / sqrt(double(train_size)-1));
-    X_aux *= (1 / sqrt(double(train_size)-1));
-    X *= (1 / (double(train_size)-1));
-    X = (X.transpose() * X);
-
-    // cout << "Diagonalizando" << endl;
-    Eigen::MatrixXd V_T(784, 784); // P = V^t
-    Eigen::MatrixXd D = deflation(X, V_T);
-
-    // cout << "Cambiando de base el train" << endl;
-    
-    Eigen::MatrixXd new_train(train_size, alpha);
-    for (int i = 0; i < train_size; i++){
-        for (int j = 0; j < alpha; j++){
-            new_train(i, j) = double(V_T.col(j).transpose() * X_aux.row(i).transpose());
-        }
-    }
-    
-    // cout << "Cambiando de base el test" << endl;
-    
-    Eigen::MatrixXd new_test(test_size, alpha);
-    for (int i = 0; i < test_size; i++){
-        for (int j = 0; j < alpha; j++){
-            new_test(i, j) = double(V_T.col(j).transpose() * test.row(i).transpose());
-        }
-    }
-
-    // cout << "Calculando los k vecinos" << endl;
+    cout << "Calculando los k vecinos" << endl;
     fstream fout;
     fout.open(out_file, ios::out);
-    fout << "ImageId,Label" << endl;
+    fout << "ImageId,Class,Distance" << endl;
     vector<neighbour> neareast_neighbors(k);
     for(int i = 0; i < test_size; i++){
         // Reset the nearest neighbors
@@ -147,7 +92,7 @@ int main(int argc, char *argv[]) {
         }
         // Get the nearest neighbors
         for(int j = 0; j < train_size; j++){
-            double dist = (new_test.row(i) - new_train.row(j)).norm();
+            double dist = (test.row(i) - X.row(j)).norm();
             if(dist < get<1>(neareast_neighbors[k-1])){
                 get<0>(neareast_neighbors[k-1]) = clases(j);
                 get<1>(neareast_neighbors[k-1]) = dist;
@@ -156,23 +101,14 @@ int main(int argc, char *argv[]) {
         }
 
         // Get the most common class
-        vector<double> classes_count(10, 0);
-        for(int j = 0; j < k; j++){
-            classes_count[get<0>(neareast_neighbors[j])] += (1 / get<1>(neareast_neighbors[j]));
+        for (int j = 0; j < k; j++){
+            fout << i + 1 << "," << get<0>(neareast_neighbors[j]) << "," << get<1>(neareast_neighbors[j]) <<endl;
         }
-
-        int max_count = 0;
-        for (int j = 1; j < 10; j++){
-            if(classes_count[j] > classes_count[max_count]){
-                max_count = j;
-            }
-        }
-        fout << i + 1 << "," << max_count << endl;
     }
     
     end = clock();
     double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
-    cout << time_taken << endl;
+    cout << "Tardé: " << time_taken << endl;
 
     return 0;
 }
