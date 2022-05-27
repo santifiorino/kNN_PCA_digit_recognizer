@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     int alpha = atoi(a_input);
     int k = atoi(k_input);
 
-    // cout << "Leeyendo los datos de entrada" << endl;
+    cout << "Leeyendo los datos de entrada" << endl;
 
     int train_size = count_lines(train_file);
     Eigen::MatrixXd X(train_size, 784);
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-    // cout << "Creando matriz de covarianza" << endl;
+    cout << "Creando matriz de covarianza" << endl;
     test.rowwise() -= X.colwise().mean();
     X.rowwise() -= X.colwise().mean();
     MatrixXd X_aux = X;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     X *= (1 / (double(train_size)-1));
     X = (X.transpose() * X);
 
-    // cout << "Diagonalizando" << endl;
+    cout << "Diagonalizando" << endl;
     Eigen::MatrixXd V_T(784, 784); // P = V^t
     Eigen::MatrixXd D = deflation(X, V_T);
 
