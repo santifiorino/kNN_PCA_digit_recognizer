@@ -28,15 +28,17 @@ int main(int argc, char *argv[]) {
     clock_t start, end;
     start = clock();
 
-    if (argc != 5){
-        cout << "Error: 5 parametros requeridos <train> <test> <out> <k>" << endl;
+    if (argc != 6){
+        cout << "Error: 5 parametros requeridos <train> <test> <out> <k> <mode>" << endl;
         return 1;
     }
     char* train_file = argv[1];
     char* test_file = argv[2];
     char* out_file = argv[3];
     char* k_input = argv[4];
+    char* out_mode_input = argv[5];
     int k = atoi(k_input);
+    int out_mode = atoi(out_mode_input);
 
     cout << "Leeyendo los datos de entrada" << endl;
 
@@ -83,7 +85,11 @@ int main(int argc, char *argv[]) {
     cout << "Calculando los k vecinos" << endl;
     fstream fout;
     fout.open(out_file, ios::out);
-    fout << "ImageId,Class,Distance" << endl;
+    if (out_mode == 0){
+        fout << "ImageId,Label" << endl;
+    } else {
+        fout << "ImageId,Class,Distance" << endl;
+    }
     vector<neighbour> neareast_neighbors(k);
     for(int i = 0; i < test_size; i++){
         // Reset the nearest neighbors
@@ -101,8 +107,23 @@ int main(int argc, char *argv[]) {
         }
 
         // Get the most common class
-        for (int j = 0; j < k; j++){
-            fout << i + 1 << "," << get<0>(neareast_neighbors[j]) << "," << get<1>(neareast_neighbors[j]) <<endl;
+        if (out_mode == 0){
+            // Get the most common class
+            vector<double> classes_count(10, 0);
+            for(int j = 0; j < k; j++){
+                classes_count[get<0>(neareast_neighbors[j])] += (1 / get<1>(neareast_neighbors[j]));
+            }
+            int max_count = 0;
+            for (int j = 1; j < 10; j++){
+                if(classes_count[j] > classes_count[max_count]){
+                    max_count = j;
+                }
+            }
+            fout << i + 1 << "," << max_count << endl;
+        } else {
+            for (int j = 0; j < k; j++){
+                fout << i + 1 << "," << get<0>(neareast_neighbors[j]) << "," << get<1>(neareast_neighbors[j]) <<endl;
+            }
         }
     }
     
