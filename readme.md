@@ -1,5 +1,4 @@
-1. Agregar la carpeta "eigen-3.4.0" al directorio
-2. make
+Basta utilizar el comando `make` para compilar los archivos de C++. Para ejecutar la notebook se necesita Python 3 y Jupyter Notebook. Las librerías externas de Python utilizadas estan detalladas en `requirements.txt`
 
 ## PCA.cpp
 
